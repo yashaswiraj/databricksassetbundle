@@ -1,0 +1,13 @@
+resources:
+  pipelines:
+    dab_learning_etl:
+      name: pipeline_1
+      catalog: ${var.catalog}
+      schema: ${var.schema}
+      serverless: true
+      root_path: "../../src/pipeline_1"
+
+      libraries:
+          - glob:
+              include: ../../src/pipeline_1/transformations/**
+

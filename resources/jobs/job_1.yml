@@ -1,0 +1,17 @@
+resources:
+  jobs:
+    job_1:
+      name: job_1
+      tasks:
+        - task_key: run_notebook
+          notebook_task:
+            notebook_path: ../../src/Notebooks/data_ingestions.ipynb
+            source: WORKSPACE
+          environment_key: Default
+      queue:
+        enabled: true
+      environments:
+        - environment_key: Default
+          spec:
+            environment_version: "5"
+      performance_target: PERFORMANCE_OPTIMIZED

@@ -1,0 +1,56 @@
+name: Validate Pull Request
+
+# Trigger on pull requests to main
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+jobs:
+  validate-bundle:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      - name: Validate Bundle Configuration
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks bundle validate --target prod
+
+      - name: Run Python Linting (optional)
+        continue-on-error: true
+        run: |
+          pip install ruff
+          ruff check src/ || echo "Linting warnings found"
+
+      - name: Run Tests (if available)
+        continue-on-error: true
+        run: |
+          if [ -d "tests" ]; then
+            pip install pytest
+            pytest tests/ || echo "Tests found issues"
+          else
+            echo "No tests directory found"
+          fi
+
+      - name: Validation Summary
+        if: success()
+        run: |
+          echo "✅ Bundle validation passed!"
+          echo "PR: #${{ github.event.pull_request.number }}"
+          echo "Author: ${{ github.event.pull_request.user.login }}"
+          echo "Ready for review and merge"

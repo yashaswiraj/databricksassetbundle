@@ -1,0 +1,49 @@
+name: Deploy to Production
+
+# Trigger on push to main branch
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  deploy-prod:
+    runs-on: ubuntu-latest
+    environment: production  # Requires manual approval if configured
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+
+      - name: Validate Bundle
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks bundle validate --target prod
+
+      - name: Deploy to Production
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+        run: |
+          databricks bundle deploy --target prod
+
+      - name: Post-deployment notification
+        if: success()
+        run: |
+          echo "✅ Successfully deployed to production!"
+          echo "Bundle: dab_learning"
+          echo "Target: prod"
+          echo "Commit: ${{ github.sha }}"
+          echo "Triggered by: ${{ github.actor }}"
